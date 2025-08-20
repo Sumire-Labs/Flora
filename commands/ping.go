@@ -3,7 +3,6 @@ package commands
 import (
 	"flora/pkg/ui"
 	"fmt"
-	"time"
 
 	"github.com/bwmarrin/discordgo"
 )
