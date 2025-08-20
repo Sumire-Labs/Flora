@@ -15,6 +15,7 @@
 # vendor/
 
 # Environment variables
+.db
 .env
 .env*.local
 .env.*.local
