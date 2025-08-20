@@ -30,10 +30,9 @@ func main() {
 		log.Fatalf("Error creating Discord session: %v", err)
 	}
 
-	// コマンドマネージャーを初期化
+	// コマンドマネージャーを初期化し、すべてのコマンドを登録
 	cmdManager := commands.NewManager()
-	cmdManager.Add(commands.PingCommand) // pingコマンドを追加
-	cmdManager.Add(commands.HelpCommand) // helpコマンドを追加
+	commands.RegisterAllCommands(cmdManager)
 
 	// BOTが準備できた時のイベントハンドラ
 	dg.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
