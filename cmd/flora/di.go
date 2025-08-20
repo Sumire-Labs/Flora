@@ -8,6 +8,7 @@ import (
 	"flora/commands"
 	"flora/configs"
 	"flora/database"
+	"flora/pkg/ui"
 	"log"
 
 	"github.com/bwmarrin/discordgo"
@@ -54,12 +55,60 @@ func NewDiscordSession(cfg *configs.Config, cm *commands.Manager) (*discordgo.Se
 	})
 
 	s.AddHandler(func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-		if i.Type == discordgo.InteractionApplicationCommand {
+		switch i.Type {
+		case discordgo.InteractionApplicationCommand:
 			if cmd, exists := cm.Get(i.ApplicationCommandData().Name); exists {
 				cmd.Handler(s, i)
+			}
+		case discordgo.InteractionMessageComponent:
+			// This is where we handle button clicks
+			customID := i.MessageComponentData().CustomID
+			switch customID {
+			case "config_log_btn":
+				handleLogConfigButton(s, i)
 			}
 		}
 	})
 
 	return s, nil
+}
+
+func handleLogConfigButton(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	user := i.Member.User
+	embed := ui.InfoEmbed(user, "📝 ログ機能設定", "ログを記録するチャンネルや、記録するイベントの種類を設定します。")
+
+	components := []discordgo.MessageComponent{
+		&discordgo.ActionsRow{
+			Components: []discordgo.MessageComponent{
+				&discordgo.Button{
+					Label:    "記録チャンネル設定",
+					Style:    discordgo.PrimaryButton,
+					CustomID: "config_log_channel_btn",
+				},
+				&discordgo.Button{
+					Label:    "記録イベント設定",
+					Style:    discordgo.SecondaryButton,
+					CustomID: "config_log_events_btn",
+					Disabled: true,
+				},
+			},
+		},
+		&discordgo.ActionsRow{
+			Components: []discordgo.MessageComponent{
+				&discordgo.Button{
+					Label:    "戻る",
+					Style:    discordgo.DangerButton,
+					CustomID: "config_main_menu_btn",
+				},
+			},
+		},
+	}
+
+	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseUpdateMessage,
+		Data: &discordgo.InteractionResponseData{
+			Embeds:     []*discordgo.MessageEmbed{embed},
+			Components: components,
+		},
+	})
 }

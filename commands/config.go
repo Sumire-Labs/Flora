@@ -23,13 +23,13 @@ var ConfigCommand = &Command{
 						Label:    "ログ機能設定",
 						Style:    discordgo.SecondaryButton,
 						CustomID: "config_log_btn",
-						Emoji:    discordgo.ComponentEmoji{Name: "📝"},
+						Emoji:    &discordgo.ComponentEmoji{Name: "📝"},
 					},
 					&discordgo.Button{
 						Label:    "チケット機能設定",
 						Style:    discordgo.SecondaryButton,
 						CustomID: "config_ticket_btn",
-						Emoji:    discordgo.ComponentEmoji{Name: "🎫"},
+						Emoji:    &discordgo.ComponentEmoji{Name: "🎫"},
 						Disabled: true, // Not yet implemented
 					},
 				},
