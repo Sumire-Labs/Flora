@@ -15,7 +15,7 @@
 # vendor/
 
 # Environment variables
-.db
+flora.db
 .env
 .env*.local
 .env.*.local
