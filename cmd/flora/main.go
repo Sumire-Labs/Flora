@@ -37,7 +37,7 @@ func main() {
 	// BOTが準備できた時のイベントハンドラ
 	dg.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
 		log.Printf("Logged in as: %v#%v", s.State.User.Username, s.State.User.Discriminator)
-		s.UpdateGameStatus(0, "M3E-Powered")
+		s.UpdateGameStatus(0, "Flora")
 
 		// グローバルコマンドを登録
 		if err := cmdManager.RegisterAll(s); err != nil {
