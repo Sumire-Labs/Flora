@@ -1,6 +1,7 @@
 package commands
 
 import (
+	"flora/pkg/ui"
 	"fmt"
 	"time"
 
@@ -14,23 +15,30 @@ var PingCommand = &Command{
 		Description: "Pong! とレイテンシを返します。",
 	},
 	Handler: func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-		startTime := time.Now()
+		// Get the user who initiated the command
+		user := i.Member.User
 
-		// "Thinking..." を表示
+		// Respond with a deferred message to show "Thinking..."
 		err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseDeferredChannelMessageWithSource,
 		})
 		if err != nil {
-			// エラー処理は後で改善
+			// In a real app, you'd send an error message back to the user.
+			fmt.Println("Failed to send deferred message:", err)
 			return
 		}
 
-		latency := time.Since(startTime)
+		// Calculate latency
+		latency := s.HeartbeatLatency()
 
-		// メッセージを編集して結果を表示
-		content := fmt.Sprintf("Pong! 🏓\nLatency: %s", latency)
+		// Create the success embed
+		embed := ui.SuccessEmbed(user, "Pong!", "")
+		latencyStr := fmt.Sprintf("```%s```", latency.String())
+		ui.AddField(embed, "API Latency", latencyStr, true)
+
+		// Edit the original deferred message with the final embed
 		_, err = s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
-			Content: &content,
+			Embeds: &[]*discordgo.MessageEmbed{embed},
 		})
 	},
 }
