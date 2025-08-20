@@ -18,6 +18,7 @@
 .env
 .env*.local
 .env.*.local
+google-credentials.json
 
 # Go workspace file
 go.work
