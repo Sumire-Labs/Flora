@@ -13,11 +13,17 @@ type Manager struct {
 	Commands map[string]*Command
 }
 
-// NewManager creates a new command manager.
+// NewManager creates a new command manager and registers all commands.
 func NewManager() *Manager {
-	return &Manager{
+	m := &Manager{
 		Commands: make(map[string]*Command),
 	}
+
+	// Register all commands here
+	m.Add(PingCommand)
+	m.Add(HelpCommand)
+
+	return m
 }
 
 // Add adds a new command to the manager.

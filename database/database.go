@@ -2,14 +2,15 @@ package database
 
 import (
 	"database/sql"
+	"flora/configs"
 	"log"
 
 	_ "github.com/mattn/go-sqlite3" // Import the driver
 )
 
-// Connect opens a connection to the SQLite database file specified by the DSN.
-func Connect(dsn string) (*sql.DB, error) {
-	db, err := sql.Open("sqlite3", dsn)
+// Connect opens a connection to the SQLite database file specified in the config.
+func Connect(cfg *configs.Config) (*sql.DB, error) {
+	db, err := sql.Open("sqlite3", cfg.DatabasePath)
 	if err != nil {
 		return nil, err
 	}
