@@ -14,9 +14,11 @@ var HelpCommand = &Command{
 		Description: "BOTのコマンド一覧を表示します。",
 	},
 	Handler: func(s *discordgo.Session, i *discordgo.InteractionCreate) {
-		// ここではまだ cmdManager を直接参照できないため、手動でコマンドリストを作成します。
-		// DI導入時に、ここを動的に生成するように修正します。
-		embed := ui.NewEmbed("🌿 Flora Commands", "利用可能なコマンドの一覧です。", ui.ColorPrimary)
+		user := i.Member.User
+
+		// Note: In a real application, you would get the command list from the CommandManager.
+		// Since we don't have access to it here without DI refactoring, we list them manually.
+		embed := ui.InfoEmbed(user, "Flora Commands", "利用可能なコマンドの一覧です。")
 
 		ui.AddField(embed, "/ping", "BOTの応答速度を測定します。", false)
 		ui.AddField(embed, "/help", "このヘルプメッセージを表示します。", false)
@@ -29,7 +31,6 @@ var HelpCommand = &Command{
 		})
 
 		if err != nil {
-			// 仮のエラーハンドリング
 			fmt.Println("Error sending help message:", err)
 		}
 	},
