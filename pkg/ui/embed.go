@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
@@ -14,23 +15,41 @@ const (
 	ColorInfo    = 0x1E88E5 // A calm, informative blue
 )
 
-// BaseEmbed creates a new MessageEmbed with a consistent style.
-func BaseEmbed() *discordgo.MessageEmbed {
+// BaseEmbed creates a new MessageEmbed with a consistent style, including footer with requester info.
+func BaseEmbed(user *discordgo.User) *discordgo.MessageEmbed {
 	return &discordgo.MessageEmbed{
 		Timestamp: time.Now().Format(time.RFC3339),
 		Footer: &discordgo.MessageEmbedFooter{
-			Text: "Flora",
-			// IconURL: "URL_TO_FLORA_ICON", // TODO: Add bot icon URL later
+			Text:    fmt.Sprintf("Requested by %s", user.Username),
+			IconURL: user.AvatarURL(""),
 		},
 	}
 }
 
-// NewEmbed creates a customized embed message.
-func NewEmbed(title, description string, color int) *discordgo.MessageEmbed {
-	embed := BaseEmbed()
-	embed.Title = title
+// SuccessEmbed creates a new embed with a success style.
+func SuccessEmbed(user *discordgo.User, title, description string) *discordgo.MessageEmbed {
+	embed := BaseEmbed(user)
+	embed.Title = "✅ " + title
 	embed.Description = description
-	embed.Color = color
+	embed.Color = ColorSuccess
+	return embed
+}
+
+// ErrorEmbed creates a new embed with an error style.
+func ErrorEmbed(user *discordgo.User, title, description string) *discordgo.MessageEmbed {
+	embed := BaseEmbed(user)
+	embed.Title = "❌ " + title
+	embed.Description = description
+	embed.Color = ColorError
+	return embed
+}
+
+// InfoEmbed creates a new embed with an info style.
+func InfoEmbed(user *discordgo.User, title, description string) *discordgo.MessageEmbed {
+	embed := BaseEmbed(user)
+	embed.Title = "ℹ️ " + title
+	embed.Description = description
+	embed.Color = ColorInfo
 	return embed
 }
 
@@ -41,4 +60,9 @@ func AddField(embed *discordgo.MessageEmbed, name, value string, inline bool) {
 		Value:  value,
 		Inline: inline,
 	})
+}
+
+// SetThumbnail sets the thumbnail for an embed.
+func SetThumbnail(embed *discordgo.MessageEmbed, url string) {
+	embed.Thumbnail = &discordgo.MessageEmbedThumbnail{URL: url}
 }
