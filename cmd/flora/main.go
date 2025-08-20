@@ -33,6 +33,7 @@ func main() {
 	// コマンドマネージャーを初期化
 	cmdManager := commands.NewManager()
 	cmdManager.Add(commands.PingCommand) // pingコマンドを追加
+	cmdManager.Add(commands.HelpCommand) // helpコマンドを追加
 
 	// BOTが準備できた時のイベントハンドラ
 	dg.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
