@@ -203,9 +203,10 @@ func respondWithChannelSelectMenu(s *discordgo.Session, i *discordgo.Interaction
 	components := []discordgo.MessageComponent{
 		&discordgo.ActionsRow{
 			Components: []discordgo.MessageComponent{
-				&discordgo.ChannelSelect{
-					CustomID:    "log_channel_select",
-					Placeholder: "テキストチャンネルを選択...",
+				&discordgo.SelectMenu{
+					Type:         discordgo.SelectMenuTypeChannel,
+					CustomID:     "log_channel_select",
+					Placeholder:  "テキストチャンネルを選択...",
 					ChannelTypes: []discordgo.ChannelType{discordgo.ChannelTypeGuildText},
 				},
 			},
