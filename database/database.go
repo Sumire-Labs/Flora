@@ -35,3 +35,14 @@ func Migrate(db *sql.DB) error {
 	_, err := db.Exec(query)
 	return err
 }
+
+// SetLogChannel sets or updates the log channel for a specific guild.
+func SetLogChannel(db *sql.DB, guildID, channelID string) error {
+	query := `
+	INSERT INTO guild_settings (guild_id, log_channel_id)
+	VALUES (?, ?)
+	ON CONFLICT(guild_id) DO UPDATE SET log_channel_id = excluded.log_channel_id;
+	`
+	_, err := db.Exec(query, guildID, channelID)
+	return err
+}
