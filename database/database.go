@@ -26,10 +26,9 @@ func Connect(cfg *configs.Config) (*sql.DB, error) {
 // Migrate runs the initial database migrations to create tables.
 func Migrate(db *sql.DB) error {
 	query := `
-	CREATE TABLE IF NOT EXISTS settings (
+	CREATE TABLE IF NOT EXISTS guild_settings (
 		guild_id TEXT PRIMARY KEY,
-		key TEXT NOT NULL,
-		value TEXT NOT NULL
+		log_channel_id TEXT
 	);
 	`
 

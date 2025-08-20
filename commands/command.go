@@ -22,6 +22,7 @@ func NewManager() *Manager {
 	// Register all commands here
 	m.Add(PingCommand)
 	m.Add(HelpCommand)
+	m.Add(ConfigCommand)
 
 	return m
 }
