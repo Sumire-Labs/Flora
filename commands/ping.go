@@ -39,5 +39,8 @@ var PingCommand = &Command{
 		_, err = s.InteractionResponseEdit(i.Interaction, &discordgo.WebhookEdit{
 			Embeds: &[]*discordgo.MessageEmbed{embed},
 		})
+		if err != nil {
+			fmt.Println("Failed to edit interaction:", err)
+		}
 	},
 }
