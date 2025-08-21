@@ -46,3 +46,23 @@ func SetLogChannel(db *sql.DB, guildID, channelID string) error {
 	_, err := db.Exec(query, guildID, channelID)
 	return err
 }
+
+// GetLogChannel retrieves the log channel for a specific guild.
+// It returns the channel ID and a boolean indicating if it was found.
+func GetLogChannel(db *sql.DB, guildID string) (string, bool, error) {
+	var channelID sql.NullString
+	query := `SELECT log_channel_id FROM guild_settings WHERE guild_id = ?`
+	err := db.QueryRow(query, guildID).Scan(&channelID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return "", false, nil
+		}
+		return "", false, err
+	}
+
+	if channelID.Valid {
+		return channelID.String, true, nil
+	} else {
+		return "", false, nil
+	}
+}

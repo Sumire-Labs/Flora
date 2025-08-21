@@ -44,6 +44,10 @@ func NewDiscordSession(cfg *configs.Config, cm *commands.Manager, db *sql.DB) (*
 		return nil, err
 	}
 
+	// Add necessary intents.
+	s.Identify.Intents |= discordgo.IntentGuildMessages | discordgo.IntentMessageContent
+
+	// Register event handlers
 	s.AddHandler(func(s *discordgo.Session, r *discordgo.Ready) {
 		log.Printf("Logged in as: %v#%v", s.State.User.Username, s.State.User.Discriminator)
 		s.UpdateGameStatus(0, "Flora")
@@ -78,7 +82,46 @@ func NewDiscordSession(cfg *configs.Config, cm *commands.Manager, db *sql.DB) (*
 		}
 	})
 
+	// Add handlers for logging events
+	s.AddHandler(handleMessageDelete(db))
+
 	return s, nil
+}
+
+// handleMessageDelete returns a function that handles message deletion events for logging.
+func handleMessageDelete(db *sql.DB) func(s *discordgo.Session, m *discordgo.MessageDelete) {
+	return func(s *discordgo.Session, m *discordgo.MessageDelete) {
+		// Ignore if the message is not in a guild
+		if m.GuildID == "" {
+			return
+		}
+
+		// Get the configured log channel for this guild
+		logChannelID, exists, err := database.GetLogChannel(db, m.GuildID)
+		if (err != nil || !exists) {
+			return // No log channel set or an error occurred
+		}
+
+		// The message content is only available if the message was in the bot's cache.
+		if m.BeforeDelete == nil {
+			log.Printf("MessageDelete event for message %s in guild %s did not have content.", m.ID, m.GuildID)
+			return
+		}
+
+		// Don't log deletions of bot's own messages or messages in the log channel
+		if m.BeforeDelete.Author.ID == s.State.User.ID || m.BeforeDelete.ChannelID == logChannelID {
+			return
+		}
+
+		embed := ui.ErrorEmbed(m.BeforeDelete.Author, "Message Deleted", "")
+		ui.AddField(embed, "Channel", "<#"+m.ChannelID+">", true)
+		ui.AddField(embed, "Author", m.BeforeDelete.Author.Mention(), true)
+		if m.BeforeDelete.Content != "" {
+			ui.AddField(embed, "Content", m.BeforeDelete.Content, false)
+		}
+
+		s.ChannelMessageSendEmbeds(logChannelID, []*discordgo.MessageEmbed{embed})
+	}
 }
 
 // handleLogChannelSelect saves the selected log channel to the database.
