@@ -25,7 +25,7 @@ func InitializeApp(cfg *configs.Config) (*App, error) {
 			wire.Build(
 			database.Connect,
 			commands.NewManager,
-			handers.NewEventHandler,
+			handlers.NewEventHandler,
 			NewDiscordSession,
 			NewApp,
 		)
