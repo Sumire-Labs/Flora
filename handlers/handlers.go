@@ -7,6 +7,7 @@ import (
 	"flora/pkg/ui"
 	"fmt"
 	"log"
+	"strconv"
 
 	"github.com/bwmarrin/discordgo"
 )
@@ -78,7 +79,12 @@ func (h *EventHandler) OnMemberAdd(s *discordgo.Session, m *discordgo.GuildMembe
 	embed := ui.SuccessEmbed(m.User, "Member Joined", "")
 	ui.SetThumbnail(embed, m.User.AvatarURL("128"))
 	ui.AddField(embed, "User", m.User.Mention(), true)
-	ui.AddField(embed, "Account Created", fmt.Sprintf("<t:%d:R>", m.User.ID>>22+1420070400000/1000), true)
+
+	// Calculate account creation date from snowflake ID
+	userID, _ := strconv.ParseInt(m.User.ID, 10, 64)
+	timestamp := (userID >> 22) + 1420070400000
+	ui.AddField(embed, "Account Created", fmt.Sprintf("<t:%d:R>", timestamp/1000), true)
+
 	s.ChannelMessageSendEmbeds(logChannelID, []*discordgo.MessageEmbed{embed})
 }
 
