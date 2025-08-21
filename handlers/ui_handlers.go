@@ -13,19 +13,30 @@ import (
 func (h *EventHandler) handleComponentInteraction(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	customID := i.MessageComponentData().CustomID
 	switch customID {
+	// Log Menu Navigation
 	case "config_log_btn":
 		h.respondWithLogMenu(s, i)
-	case "config_main_menu_btn":
-		user := i.Member.User
-		h.respondWithMainMenu(s, i, user)
 	case "config_log_channel_btn":
 		h.respondWithChannelSelectMenu(s, i)
 	case "log_channel_select":
 		h.handleLogChannelSelect(s, i)
+
+	// Ticket Menu Navigation
 	case "config_ticket_btn":
 		h.respondWithTicketMenu(s, i)
+	case "config_ticket_panel_channel_btn":
+		h.respondWithTicketPanelChannelSelectMenu(s, i)
+	case "ticket_panel_channel_select":
+		h.handleTicketPanelChannelSelect(s, i)
+
+	// Common
+	case "config_main_menu_btn":
+		user := i.Member.User
+		h.respondWithMainMenu(s, i, user)
 	}
 }
+
+// --- Log Handlers ---
 
 func (h *EventHandler) handleLogChannelSelect(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	data := i.MessageComponentData()
@@ -38,7 +49,6 @@ func (h *EventHandler) handleLogChannelSelect(s *discordgo.Session, i *discordgo
 		return
 	}
 
-	// Respond with a success message and show the log menu again
 	h.respondWithLogMenu(s, i)
 
 	_, err := s.FollowupMessageCreate(i.Interaction, true, &discordgo.WebhookParams{
@@ -49,6 +59,32 @@ func (h *EventHandler) handleLogChannelSelect(s *discordgo.Session, i *discordgo
 		log.Printf("Failed to send followup message: %v", err)
 	}
 }
+
+// --- Ticket Handlers ---
+
+func (h *EventHandler) handleTicketPanelChannelSelect(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	data := i.MessageComponentData()
+	channelID := data.Values[0]
+	guildID := i.GuildID
+
+	if err := database.SetTicketPanelChannel(h.DB, guildID, channelID); err != nil {
+		log.Printf("Failed to set ticket panel channel for guild %s: %v", guildID, err)
+		// TODO: Respond with an error message to the user
+		return
+	}
+
+	h.respondWithTicketMenu(s, i)
+
+	_, err := s.FollowupMessageCreate(i.Interaction, true, &discordgo.WebhookParams{
+		Content: "✅ チケットパネルの送信先チャンネルを設定しました。",
+		Flags:   discordgo.MessageFlagsEphemeral,
+	})
+	if err != nil {
+		log.Printf("Failed to send followup message: %v", err)
+	}
+}
+
+// --- UI Responders ---
 
 func (h *EventHandler) respondWithMainMenu(s *discordgo.Session, i *discordgo.InteractionCreate, user *discordgo.User) {
 	embed := ui.InfoEmbed(user, "⚙️ Configuration Panel", "設定したい項目をボタンで選択してください。")
@@ -71,27 +107,27 @@ func (h *EventHandler) respondWithMainMenu(s *discordgo.Session, i *discordgo.In
 		},
 	}
 
-	var err error
+	var response discordgo.InteractionResponse
 	if i.Message != nil {
-		err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		response = discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseUpdateMessage,
 			Data: &discordgo.InteractionResponseData{
 				Embeds:     []*discordgo.MessageEmbed{embed},
 				Components: components,
 				Flags:      discordgo.MessageFlagsEphemeral,
 			},
-		})
+		}
 	} else {
-		err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		response = discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
 				Embeds:     []*discordgo.MessageEmbed{embed},
 				Components: components,
 				Flags:      discordgo.MessageFlagsEphemeral,
 			},
-		})
+		}
 	}
-	if err != nil {
+	if err := s.InteractionRespond(i.Interaction, &response); err != nil {
 		log.Printf("Failed to respond to main menu interaction: %v", err)
 	}
 }
@@ -178,7 +214,6 @@ func (h *EventHandler) respondWithChannelSelectMenu(s *discordgo.Session, i *dis
 func (h *EventHandler) respondWithTicketMenu(s *discordgo.Session, i *discordgo.InteractionCreate) {
 	user := i.Member.User
 	embed := ui.InfoEmbed(user, "🎫 チケット機能設定", "チケット機能に関する設定を行います。")
-
 	components := []discordgo.MessageComponent{
 		&discordgo.ActionsRow{
 			Components: []discordgo.MessageComponent{
@@ -186,13 +221,12 @@ func (h *EventHandler) respondWithTicketMenu(s *discordgo.Session, i *discordgo.
 					Label:    "パネル送信先設定",
 					Style:    discordgo.PrimaryButton,
 					CustomID: "config_ticket_panel_channel_btn",
-					Disabled: true, // TODO: Implement
 				},
 				&discordgo.Button{
 					Label:    "サポートロール設定",
 					Style:    discordgo.PrimaryButton,
 					CustomID: "config_ticket_support_role_btn",
-					Disabled: true, // TODO: Implement
+					Disabled: true,
 				},
 			},
 		},
@@ -216,5 +250,42 @@ func (h *EventHandler) respondWithTicketMenu(s *discordgo.Session, i *discordgo.
 	})
 	if err != nil {
 		log.Printf("Failed to respond to ticket menu interaction: %v", err)
+	}
+}
+
+func (h *EventHandler) respondWithTicketPanelChannelSelectMenu(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	user := i.Member.User
+	embed := ui.InfoEmbed(user, "✍️ パネル送信先設定", "チケット作成パネルを送信するチャンネルを選択してください。")
+	components := []discordgo.MessageComponent{
+		&discordgo.ActionsRow{
+			Components: []discordgo.MessageComponent{
+				&discordgo.SelectMenu{
+					CustomID:     "ticket_panel_channel_select",
+					Placeholder:  "テキストチャンネルを選択...",
+					ChannelTypes: []discordgo.ChannelType{discordgo.ChannelTypeGuildText},
+					Options:      []discordgo.SelectMenuOption{},
+				},
+			},
+		},
+		&discordgo.ActionsRow{
+			Components: []discordgo.MessageComponent{
+				&discordgo.Button{
+					Label:    "戻る (チケット設定)",
+					Style:    discordgo.SecondaryButton,
+					CustomID: "config_ticket_btn",
+				},
+			},
+		},
+	}
+
+	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseUpdateMessage,
+		Data: &discordgo.InteractionResponseData{
+			Embeds:     []*discordgo.MessageEmbed{embed},
+			Components: components,
+		},
+	})
+	if err != nil {
+		log.Printf("Failed to respond to ticket panel channel select interaction: %v", err)
 	}
 }

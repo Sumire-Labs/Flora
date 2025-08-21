@@ -87,3 +87,14 @@ func GetLogChannel(db *sql.DB, guildID string) (string, bool, error) {
 		return "", false, nil
 	}
 }
+
+// SetTicketPanelChannel sets or updates the ticket panel channel for a specific guild.
+func SetTicketPanelChannel(db *sql.DB, guildID, channelID string) error {
+	query := `
+	INSERT INTO guild_settings (guild_id, ticket_panel_channel_id)
+	VALUES (?, ?)
+	ON CONFLICT(guild_id) DO UPDATE SET ticket_panel_channel_id = excluded.ticket_panel_channel_id;
+	`
+	_, err := db.Exec(query, guildID, channelID)
+	return err
+}
