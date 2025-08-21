@@ -36,12 +36,16 @@ func (h *EventHandler) handleLogChannelSelect(s *discordgo.Session, i *discordgo
 		return
 	}
 
+	// Respond with a success message and show the log menu again
 	h.respondWithLogMenu(s, i)
 
-	s.FollowupMessageCreate(i.Interaction, true, &discordgo.WebhookParams{
+	_, err := s.FollowupMessageCreate(i.Interaction, true, &discordgo.WebhookParams{
 		Content: "✅ ログチャンネルを設定しました。",
 		Flags:   discordgo.MessageFlagsEphemeral,
 	})
+	if err != nil {
+		log.Printf("Failed to send followup message: %v", err)
+	}
 }
 
 func (h *EventHandler) respondWithMainMenu(s *discordgo.Session, i *discordgo.InteractionCreate, user *discordgo.User) {
@@ -66,8 +70,9 @@ func (h *EventHandler) respondWithMainMenu(s *discordgo.Session, i *discordgo.In
 		},
 	}
 
+	var err error
 	if i.Message != nil {
-		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseUpdateMessage,
 			Data: &discordgo.InteractionResponseData{
 				Embeds:     []*discordgo.MessageEmbed{embed},
@@ -76,7 +81,7 @@ func (h *EventHandler) respondWithMainMenu(s *discordgo.Session, i *discordgo.In
 			},
 		})
 	} else {
-		s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		err = s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 			Type: discordgo.InteractionResponseChannelMessageWithSource,
 			Data: &discordgo.InteractionResponseData{
 				Embeds:     []*discordgo.MessageEmbed{embed},
@@ -84,6 +89,9 @@ func (h *EventHandler) respondWithMainMenu(s *discordgo.Session, i *discordgo.In
 				Flags:      discordgo.MessageFlagsEphemeral,
 			},
 		})
+	}
+	if err != nil {
+		log.Printf("Failed to respond to main menu interaction: %v", err)
 	}
 }
 
@@ -117,13 +125,16 @@ func (h *EventHandler) respondWithLogMenu(s *discordgo.Session, i *discordgo.Int
 		},
 	}
 
-	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseUpdateMessage,
 		Data: &discordgo.InteractionResponseData{
 			Embeds:     []*discordgo.MessageEmbed{embed},
 			Components: components,
 		},
 	})
+	if err != nil {
+		log.Printf("Failed to respond to log menu interaction: %v", err)
+	}
 }
 
 func (h *EventHandler) respondWithChannelSelectMenu(s *discordgo.Session, i *discordgo.InteractionCreate) {
@@ -136,6 +147,7 @@ func (h *EventHandler) respondWithChannelSelectMenu(s *discordgo.Session, i *dis
 					CustomID:     "log_channel_select",
 					Placeholder:  "テキストチャンネルを選択...",
 					ChannelTypes: []discordgo.ChannelType{discordgo.ChannelTypeGuildText},
+					Options:      []discordgo.SelectMenuOption{},
 				},
 			},
 		},
@@ -150,11 +162,14 @@ func (h *EventHandler) respondWithChannelSelectMenu(s *discordgo.Session, i *dis
 		},
 	}
 
-	s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseUpdateMessage,
 		Data: &discordgo.InteractionResponseData{
 			Embeds:     []*discordgo.MessageEmbed{embed},
 			Components: components,
 		},
 	})
+	if err != nil {
+		log.Printf("Failed to respond to channel select interaction: %v", err)
+	}
 }
