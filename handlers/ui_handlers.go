@@ -22,6 +22,8 @@ func (h *EventHandler) handleComponentInteraction(s *discordgo.Session, i *disco
 		h.respondWithChannelSelectMenu(s, i)
 	case "log_channel_select":
 		h.handleLogChannelSelect(s, i)
+	case "config_ticket_btn":
+		h.respondWithTicketMenu(s, i)
 	}
 }
 
@@ -64,7 +66,6 @@ func (h *EventHandler) respondWithMainMenu(s *discordgo.Session, i *discordgo.In
 					Style:    discordgo.SecondaryButton,
 					CustomID: "config_ticket_btn",
 					Emoji:    &discordgo.ComponentEmoji{Name: "🎫"},
-					Disabled: true,
 				},
 			},
 		},
@@ -171,5 +172,49 @@ func (h *EventHandler) respondWithChannelSelectMenu(s *discordgo.Session, i *dis
 	})
 	if err != nil {
 		log.Printf("Failed to respond to channel select interaction: %v", err)
+	}
+}
+
+func (h *EventHandler) respondWithTicketMenu(s *discordgo.Session, i *discordgo.InteractionCreate) {
+	user := i.Member.User
+	embed := ui.InfoEmbed(user, "🎫 チケット機能設定", "チケット機能に関する設定を行います。")
+
+	components := []discordgo.MessageComponent{
+		&discordgo.ActionsRow{
+			Components: []discordgo.MessageComponent{
+				&discordgo.Button{
+					Label:    "パネル送信先設定",
+					Style:    discordgo.PrimaryButton,
+					CustomID: "config_ticket_panel_channel_btn",
+					Disabled: true, // TODO: Implement
+				},
+				&discordgo.Button{
+					Label:    "サポートロール設定",
+					Style:    discordgo.PrimaryButton,
+					CustomID: "config_ticket_support_role_btn",
+					Disabled: true, // TODO: Implement
+				},
+			},
+		},
+		&discordgo.ActionsRow{
+			Components: []discordgo.MessageComponent{
+				&discordgo.Button{
+					Label:    "戻る",
+					Style:    discordgo.DangerButton,
+					CustomID: "config_main_menu_btn",
+				},
+			},
+		},
+	}
+
+	err := s.InteractionRespond(i.Interaction, &discordgo.InteractionResponse{
+		Type: discordgo.InteractionResponseUpdateMessage,
+		Data: &discordgo.InteractionResponseData{
+			Embeds:     []*discordgo.MessageEmbed{embed},
+			Components: components,
+		},
+	})
+	if err != nil {
+		log.Printf("Failed to respond to ticket menu interaction: %v", err)
 	}
 }

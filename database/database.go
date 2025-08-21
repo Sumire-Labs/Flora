@@ -23,16 +23,37 @@ func Connect(cfg *configs.Config) (*sql.DB, error) {
 	return db, nil
 }
 
-// Migrate runs the initial database migrations to create tables.
+// Migrate runs the initial database migrations to create tables and add columns.
 func Migrate(db *sql.DB) error {
-	query := `
+	// guild_settings table
+	query1 := `
 	CREATE TABLE IF NOT EXISTS guild_settings (
 		guild_id TEXT PRIMARY KEY,
 		log_channel_id TEXT
 	);
 	`
+	if _, err := db.Exec(query1); err != nil {
+		return err
+	}
 
-	_, err := db.Exec(query)
+	// Add columns to guild_settings for the ticket system.
+	// We ignore errors here because the columns might already exist.
+	db.Exec("ALTER TABLE guild_settings ADD COLUMN ticket_panel_channel_id TEXT;")
+	db.Exec("ALTER TABLE guild_settings ADD COLUMN ticket_category_id TEXT;")
+	db.Exec("ALTER TABLE guild_settings ADD COLUMN support_role_id TEXT;")
+	db.Exec("ALTER TABLE guild_settings ADD COLUMN transcript_channel_id TEXT;")
+
+	// tickets table
+	query2 := `
+	CREATE TABLE IF NOT EXISTS tickets (
+		ticket_id INTEGER PRIMARY KEY AUTOINCREMENT,
+		guild_id TEXT NOT NULL,
+		user_id TEXT NOT NULL,
+		channel_id TEXT NOT NULL,
+		status TEXT NOT NULL
+	);
+	`
+	_, err := db.Exec(query2)
 	return err
 }
 
